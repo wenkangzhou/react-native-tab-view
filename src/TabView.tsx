@@ -5,11 +5,13 @@ import {
   StyleProp,
   ViewStyle,
   LayoutChangeEvent,
+  Platform
 } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import TabBar, { Props as TabBarProps } from './TabBar';
-import Pager from './Pager';
+import PagerAndroid from './PagerAndroid';
+import PagerIos from './PagerIos';
 import SceneView from './SceneView';
 import {
   Layout,
@@ -18,6 +20,9 @@ import {
   SceneRendererProps,
   PagerCommonProps,
 } from './types';
+
+
+const Pager: any = Platform.OS === 'ios' ? PagerIos : PagerAndroid;
 
 type Props<T extends Route> = PagerCommonProps & {
   position?: Animated.Value<number>;
@@ -120,7 +125,6 @@ export default class TabView<T extends Route> extends React.Component<
       springVelocityScale,
     } = this.props;
     const { layout } = this.state;
-
     return (
       <View onLayout={this.handleLayout} style={[styles.pager, style]}>
         <Pager
@@ -138,7 +142,7 @@ export default class TabView<T extends Route> extends React.Component<
           removeClippedSubviews={removeClippedSubviews}
           gestureHandlerProps={gestureHandlerProps}
         >
-          {({ position, render, addListener, removeListener, jumpTo }) => {
+          {({ position, render, addListener, removeListener, jumpTo } : { position: any ,render: any , addListener: any , removeListener: any , jumpTo: any  }) => {
             // All of the props here must not change between re-renders
             // This is crucial to optimizing the routes with PureComponent
             const sceneRendererProps = {
