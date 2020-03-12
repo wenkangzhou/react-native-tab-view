@@ -10,7 +10,6 @@ import {
 import TouchableItem from './TouchableItem';
 import { Scene, Route, NavigationState } from './types';
 import Animated from 'react-native-reanimated';
-import memoize from './memoize';
 
 type Props<T extends Route> = {
   position: Animated.Node<number>;
@@ -20,6 +19,7 @@ type Props<T extends Route> = {
   inactiveColor?: string;
   pressColor?: string;
   pressOpacity?: number;
+  routeIndex: number;
   getLabelText: (scene: Scene<T>) => string | undefined;
   getAccessible: (scene: Scene<T>) => boolean | undefined;
   getAccessibilityLabel: (scene: Scene<T>) => string | undefined;
@@ -47,71 +47,34 @@ const DEFAULT_INACTIVE_COLOR = 'rgba(255, 255, 255, 0.7)';
 
 export default class TabBarItem<T extends Route> extends React.Component<
   Props<T>
-> {
-  private getActiveOpacity = memoize(
-    (position: Animated.Node<number>, routes: Route[], tabIndex: number) => {
-      if (routes.length > 1) {
-        const inputRange = routes.map((_, i) => i);
-
-        return Animated.interpolate(position, {
-          inputRange,
-          outputRange: inputRange.map(i => (i === tabIndex ? 1 : 0)),
-        });
-      } else {
-        return 1;
-      }
-    }
-  );
-
-  private getInactiveOpacity = memoize((position, routes, tabIndex) => {
-    if (routes.length > 1) {
-      const inputRange = routes.map((_: Route, i: number) => i);
-
-      return Animated.interpolate(position, {
-        inputRange,
-        outputRange: inputRange.map((i: number) => (i === tabIndex ? 0 : 1)),
-      });
-    } else {
-      return 0;
-    }
-  });
+  > {
 
   render() {
     const {
-      route,
-      position,
-      navigationState,
-      renderLabel: renderLabelPassed,
-      renderIcon,
-      renderBadge,
-      getLabelText,
-      getTestID,
-      getAccessibilityLabel,
-      getAccessible,
-      activeColor = DEFAULT_ACTIVE_COLOR,
-      inactiveColor = DEFAULT_INACTIVE_COLOR,
-      pressColor,
-      pressOpacity,
-      labelStyle,
-      style,
-      onLayout,
-      onPress,
-      onLongPress,
-    } = this.props;
+            route,
+            navigationState,
+            renderLabel: renderLabelPassed,
+            renderIcon,
+            renderBadge,
+            getLabelText,
+            getTestID,
+            getAccessibilityLabel,
+            getAccessible,
+            activeColor = DEFAULT_ACTIVE_COLOR,
+            inactiveColor = DEFAULT_INACTIVE_COLOR,
+            pressColor,
+            pressOpacity,
+            labelStyle,
+            style,
+            onLayout,
+            onPress,
+            onLongPress,
+            routeIndex
+          } = this.props;
 
     const tabIndex = navigationState.routes.indexOf(route);
     const isFocused = navigationState.index === tabIndex;
 
-    const activeOpacity = this.getActiveOpacity(
-      position,
-      navigationState.routes,
-      tabIndex
-    );
-    const inactiveOpacity = this.getInactiveOpacity(
-      position,
-      navigationState.routes,
-      tabIndex
-    );
 
     let icon: React.ReactNode | null = null;
     let label: React.ReactNode | null = null;
@@ -131,43 +94,41 @@ export default class TabBarItem<T extends Route> extends React.Component<
       if (inactiveIcon != null && activeIcon != null) {
         icon = (
           <View style={styles.icon}>
-            <Animated.View style={{ opacity: inactiveOpacity }}>
-              {inactiveIcon}
-            </Animated.View>
-            <Animated.View
-              style={[StyleSheet.absoluteFill, { opacity: activeOpacity }]}
-            >
-              {activeIcon}
-            </Animated.View>
+            {
+              routeIndex !== navigationState.index ?
+                <View>{inactiveIcon}</View>
+                :
+                <View>{activeIcon}</View>
+            }
           </View>
         );
       }
     }
 
     const renderLabel =
-      renderLabelPassed !== undefined
-        ? renderLabelPassed
-        : ({ route, color }: { route: T; color: string }) => {
-            const labelText = getLabelText({ route });
+            renderLabelPassed !== undefined
+              ? renderLabelPassed
+              : ({ route, color }: { route: T; color: string }) => {
+                const labelText = getLabelText({ route });
 
-            if (typeof labelText === 'string') {
-              return (
-                <Animated.Text
-                  style={[
-                    styles.label,
-                    // eslint-disable-next-line react-native/no-inline-styles
-                    icon ? { marginTop: 0 } : null,
-                    { color },
-                    labelStyle,
-                  ]}
-                >
-                  {labelText}
-                </Animated.Text>
-              );
-            }
+                if (typeof labelText === 'string') {
+                  return (
+                    <Animated.Text
+                      style={[
+                        styles.label,
+                        // eslint-disable-next-line react-native/no-inline-styles
+                        icon ? { marginTop: 0 } : null,
+                        { color },
+                        labelStyle,
+                      ]}
+                    >
+                      {labelText}
+                    </Animated.Text>
+                  );
+                }
 
-            return labelText;
-          };
+                return labelText;
+              };
 
     if (renderLabel) {
       const activeLabel = renderLabel({
@@ -183,14 +144,12 @@ export default class TabBarItem<T extends Route> extends React.Component<
 
       label = (
         <View>
-          <Animated.View style={{ opacity: inactiveOpacity }}>
-            {inactiveLabel}
-          </Animated.View>
-          <Animated.View
-            style={[StyleSheet.absoluteFill, { opacity: activeOpacity }]}
-          >
-            {activeLabel}
-          </Animated.View>
+          {
+            routeIndex !== navigationState.index ?
+              <View>{inactiveLabel}</View>
+              :
+              <View>{activeLabel}</View>
+          }
         </View>
       );
     }
